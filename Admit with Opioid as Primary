@@ -5,6 +5,44 @@ import math
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df = pd.concat([pd.read_csv(f) for f in glob.glob('/Users/ericchiyembekeza/Desktop/Data/*.csv')], ignore_index = True, sort=False)
+df = pd.concat([pd.read_csv(f, dtype= "category") for f in glob.glob('/Users/ericchiyembekeza/Desktop/Data/*.csv')], ignore_index = True, sort=False)
 df.head()
+df = df.drop(columns=['SYS_RECID'])
 df.columns
+def wrangle(X):
+    def is_opioid_dx(opioid_dx):
+        if opioid_dx in ['F11.10','F11.120','F11.121','F11.122','F11.129','F11.14','F11.150','F11.151','F11.159','F11.181','F11.182','F11.188',
+        'F11.19','F11.20','F11.220','F11.221','F11.222','F11.229','F11.23','F11.24','F11.250','F11.251','F11.259','F11.281','F11.282','F11.288',
+        'F11.29','F11.90','F11.920','F11.921','F11.922','F11.929','F11.93','F11.94','F11.950','F11.951','F11.959','F11.981','F11.982','F11.988',
+        'F11.99','T40.0X1A','T40.0X1D','T40.0X1S','T40.0X4A','T40.0X4D','T40.0X4S','T40.0X5A','T40.0X5D','T40.0X5S','T40.1X1A','T40.1X1D',
+        'T40.1X1S','T40.1X4A','T40.1X4D','T40.1X4S','T40.2X1A','T40.2X1D','T40.2X1S','T40.2X4A','T40.2X4D','T40.2X4S','T40.2X5A','T40.2X5D',
+        'T40.2X5S','T40.3X1A','T40.3X1D','T40.3X1S','T40.3X4A','T40.3X4D','T40.3X4S','T40.3X5A','T40.3X5D','T40.3X5S','T40.4X1A','T40.4X1D',
+        'T40.4X1S','T40.4X4A','T40.4X4D','T40.4X4S','T40.4X5A','T40.4X5D','T40.4X5S','T40.601A','T40.601D','T40.601S','T40.604A','T40.604D',
+        'T40.604S','T40.605A','T40.605D','T40.605S','T40.691A','T40.691D','T40.691S','T40.694A','T40.694D','T40.694S','T40.695A','T40.695D',
+        'T40.695S','T40.0X2A','T40.0X2D','T40.0X2S','T40.0X3A','T40.0X3D','T40.0X3S','T40.1X2A','T40.1X2D','T40.1X2S','T40.1X3A','T40.1X3D',
+        'T40.1X3S','T40.2X2A','T40.2X2D','T40.2X2S','T40.2X3A','T40.2X3D','T40.2X3S','T40.3X2A','T40.3X2D','T40.3X2S','T40.3X3A','T40.3X3D',
+        'T40.3X3S','T40.4X2A','T40.4X2D','T40.4X2S','T40.4X3A','T40.4X3D','T40.4X3S','T40.602A','T40.602D','T40.602S','T40.603A','T40.603D',
+        'T40.603S','T40.692A','T40.692D','T40.692S','T40.693A','T40.693D','T40.693S']:
+            return 1
+        else:
+            return 0
+    X['REASON_CDE'] = X['REASON_CDE'].apply(is_opioid_dx).astype('category')
+    def is_night(arrtime):
+        arrtime_int = int(arrtime)
+        if ((arrtime_int >= 0) & (arrtime_int < 8)):
+            return 1
+        elif ((arrtime_int >= 20) & (arrtime_int < 23)):
+            return 1
+        else:
+            return 0
+    X['HR_ARRIVAL'] = X['HR_ARRIVAL'].apply(is_night).astype('category')
+    def roundup(x, n=10):
+        X['AGE'] = X['AGE'].astype(int)
+        res = math.ceil(x/n)*n
+        if (x%n < n/2) and (x%n>0):
+            res-=n
+        return res
+    X['AGE'] = df['AGE'].apply(roundup).astype('category')
+    return X
+wrangle(df)
+df['AGE'], df['HR_ARRIVAL'], df['REASON_CDE']
