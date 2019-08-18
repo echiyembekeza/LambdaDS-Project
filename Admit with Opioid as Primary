@@ -36,13 +36,7 @@ def wrangle(X):
         else:
             return 0
     X['HR_ARRIVAL'] = X['HR_ARRIVAL'].apply(is_night).astype('category')
-    def roundup(x, n=10):
-        X['AGE'] = X['AGE'].astype(int)
-        res = math.ceil(x/n)*n
-        if (x%n < n/2) and (x%n>0):
-            res-=n
-        return res
-    X['AGE'] = df['AGE'].apply(roundup).astype('category')
     return X
 wrangle(df)
-df['AGE'], df['HR_ARRIVAL'], df['REASON_CDE']
+df['SERV_LOC'].unique()
+df['REASON_CDE'].nunique()
