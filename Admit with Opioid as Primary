@@ -39,4 +39,6 @@ def wrangle(X):
     return X
 wrangle(df)
 df['SERV_LOC'].unique()
-df['REASON_CDE'].nunique()
+df['REASON_CDE'].unique()
+from sklearn.model_selection import train_test_split
+trainval, test = train_test_split(df, random_state=42)
