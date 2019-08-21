@@ -42,3 +42,17 @@ df['SERV_LOC'].unique()
 df['REASON_CDE'].unique()
 from sklearn.model_selection import train_test_split
 trainval, test = train_test_split(df, random_state=42)
+
+train, val = train_test_split(trainval, random_state=42)
+
+
+test.shape
+
+assert 
+
+
+
+#data is split into trainval and test ,
+#split the trainval data into train and val as well
+#create pipeline
+#encoders
