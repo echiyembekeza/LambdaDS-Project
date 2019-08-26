@@ -40,19 +40,39 @@ def wrangle(X):
 wrangle(df)
 df['SERV_LOC'].unique()
 df['REASON_CDE'].unique()
+df['HR_ARRIVAL'].unique()
 from sklearn.model_selection import train_test_split
 trainval, test = train_test_split(df, random_state=42)
-
 train, val = train_test_split(trainval, random_state=42)
 
-
+train.shape
+val.shape
 test.shape
 
-assert 
+
+import numpy as np
+
+target = 'REASON_CDE'
+X_train = train.drop(columns=target)
+X_val = val.drop(columns=target)
+X_test = test.drop(columns=target)
+y_train = train[target]
+y_val = val[target]
+#y_train_log = np.log1p(y_train)
+#y_val_log = np.log1p(y_val)
 
 
+import category_encoders as ce
+from xgboost import XGBRegressor
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
-#data is split into trainval and test ,
-#split the trainval data into train and val as well
-#create pipeline
-#encoders
+encoder = ce.OrdinalEncoder()
+X_train_encoded = encoder.fit_transform(X_train)
+X_val_encoded = encoder.transform(X_val)
+eval_set = [(X_train_encoded, y_train),
+            (X_val_encoded, y_val)]
+model = XGBRegressor(n_estimators=2000, n_jobs=-1)
+model.fit(X_train_encoded, y_train,
+          eval_set=eval_set, eval_metric='rmse', early_stopping_rounds=50)
+          
