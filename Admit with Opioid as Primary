@@ -4,13 +4,22 @@ import glob
 import math
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pandas_profiling as pp
 
-df = pd.concat([pd.read_csv(f, dtype= "category") for f in glob.glob('/Users/ericchiyembekeza/Desktop/Data/*.csv')], ignore_index = True, sort=False)
+chunk = 10000
+a = pd.read_csv("/Users/ericchiyembekeza/Desktop/Data/17Q3-pt1.csv", low_memory=False)
+b = pd.read_csv("/Users/ericchiyembekeza/Desktop/Data/17Q3-pt2.csv", low_memory=False)
+c = pd.read_csv("/Users/ericchiyembekeza/Desktop/Data/17Q4-pt1.csv", low_memory=False)
+d = pd.read_csv("/Users/ericchiyembekeza/Desktop/Data/17Q4-pt2.csv", low_memory=False)
+e = pd.read_csv("/Users/ericchiyembekeza/Desktop/Data/18Q1-pt1.csv", low_memory=False)
+f = pd.read_csv("/Users/ericchiyembekeza/Desktop/Data/18Q1-pt2.csv", low_memory=False)
+g = pd.read_csv("/Users/ericchiyembekeza/Desktop/Data/18Q2-pt1.csv", low_memory=False)
+h = pd.read_csv("/Users/ericchiyembekeza/Desktop/Data/18Q2-pt2.csv", low_memory=False)
+frames = [a,b,c,d,e,f,g,h]
+df = pd.concat(frames, sort=False)
 df.head()
+
+#df = pd.concat([pd.read_csv(f, dtype="category") for f in glob.glob('/Users/ericchiyembekeza/Desktop/Data/*.csv')], ignore_index = True, sort=False)
 df = df.drop(columns=['SYS_RECID'])
-pp.ProfileReport(df)
-df.columns
 df['ETHNICITY']
 def wrangle(X):
     def is_opioid_dx(opioid_dx):
@@ -29,7 +38,7 @@ def wrangle(X):
             return 1
         else:
             return 0
-    X['REASON_CDE'] = X['REASON_CDE'].apply(is_opioid_dx).astype('bool')
+    X['REASON_CDE'] = X['REASON_CDE'].apply(is_opioid_dx).astype('int32')
     def is_night(arrtime):
         arrtime_int = int(arrtime)
         if ((arrtime_int >= 0) & (arrtime_int < 8)):
@@ -38,7 +47,7 @@ def wrangle(X):
             return 1
         else:
             return 0
-    X['HR_ARRIVAL'] = X['HR_ARRIVAL'].apply(is_night).astype('bool')
+    X['HR_ARRIVAL'] = X['HR_ARRIVAL'].apply(is_night).astype('int32')
     return X
 wrangle(df)
 df['SERV_LOC'].unique()
