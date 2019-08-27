@@ -19,8 +19,13 @@ df = pd.concat(frames, sort=False)
 df.head()
 
 #df = pd.concat([pd.read_csv(f, dtype="category") for f in glob.glob('/Users/ericchiyembekeza/Desktop/Data/*.csv')], ignore_index = True, sort=False)
-df = df.drop(columns=['SYS_RECID'])
-df['ETHNICITY']
+df.columns
+df['ATTEN_PHYN']
+useless_cols = ['TYPE_SERV', 'SERV_LOC','EVALCODE1', 'EVALCODE2', 'EVALCODE3', 'EVALCODE4','EVALCODE5', 'OTHCPT1', 'OTHCPT2', 'OTHCPT3', 'OTHCPT4', 'OTHCPT5','OTHCPT6', 'OTHCPT7', 'OTHCPT8', 'OTHCPT9', 'OTHCPT10', 'OTHCPT11','OTHCPT12','OTHCPT13', 'OTHCPT14', 'OTHCPT15', 'OTHCPT16', 'OTHCPT17','OTHCPT18', 'OTHCPT19', 'OTHCPT20', 'OTHCPT21', 'OTHCPT22', 'OTHCPT23','OTHCPT24', 'OTHCPT25', 'OTHCPT26', 'OTHCPT27', 'OTHCPT28', 'OTHCPT29','OTHCPT30','PRINDIAG','OTHDIAG1','OTHDIAG2','OTHDIAG3', 'OTHDIAG4','OTHDIAG5', 'OTHDIAG6', 'OTHDIAG7', 'OTHDIAG8', 'OTHDIAG9', 'ECMORB1','ECMORB2', 'ECMORB3', 'PRINPROC', 'OTHPROC1', 'OTHPROC2', 'OTHPROC3','OTHPROC4']
+df = df.drop(columns=useless_cols)
+df.describe()
+df['ETHNICITY'].unique()
+df['ETHNICITY'] = df['ETHNICITY'].map(lambda x: x.lstrip('E'))
 def wrangle(X):
     def is_opioid_dx(opioid_dx):
         if opioid_dx in ['F11.10','F11.120','F11.121','F11.122','F11.129','F11.14','F11.150','F11.151','F11.159','F11.181','F11.182','F11.188',
@@ -50,7 +55,14 @@ def wrangle(X):
     X['HR_ARRIVAL'] = X['HR_ARRIVAL'].apply(is_night).astype('int32')
     return X
 wrangle(df)
-df['SERV_LOC'].unique()
+def is_sex(sex):
+    if sex is 'M':
+        return 1
+    else:
+        return 0
+
+df['SEX'] = df['SEX'].apply(is_sex).astype(int)
+df['SEX'].unique()
 df['REASON_CDE'].unique()
 df['HR_ARRIVAL'].unique()
 from sklearn.model_selection import train_test_split
@@ -70,8 +82,8 @@ X_val = val.drop(columns=target)
 X_test = test.drop(columns=target)
 y_train = train[target]
 y_val = val[target]
-#y_train_log = np.log1p(y_train)
-#y_val_log = np.log1p(y_val)
+y_train_log = np.log1p(y_train)
+y_val_log = np.log1p(y_val)
 
 
 import category_encoders as ce
@@ -87,3 +99,38 @@ eval_set = [(X_train_encoded, y_train),
 model = XGBRegressor(n_estimators=2000, n_jobs=-1)
 model.fit(X_train_encoded, y_train,
           eval_set=eval_set, eval_metric='rmse', early_stopping_rounds=50)
+
+
+
+%matplotlib inline
+import matplotlib.pyplot as plt
+
+results = model.evals_result()
+train_rmse = results['validation_0']['rmse']
+val_rmse = results['validation_1']['rmse']
+epoch = range(len(train_rmse))
+plt.plot(epoch, train_rmse, label='Train')
+plt.plot(epoch, val_rmse, label='Validation')
+plt.ylim(0.15,0.35)
+plt.legend();
+
+from scipy.stats import randint, uniform
+from sklearn.model_selection import RandomizedSearchCV
+
+param_distributions = {
+    'randomforestregressor__n_estimators': randint(50, 500),
+    'randomforestregressor__max_features': uniform(),
+    'randomforestregressor__min_samples_leaf': [1, 10, 100]}
+
+search = RandomizedSearchCV(
+    pipeline,
+    param_distributions = param_distributions,
+    n_iter = 100,
+    cv = 10,
+    scoring = 'neg_mean_squared_error',
+    return_train_score = True,
+    n_jobs = -1)
+
+search.fit(x_train, y_train_log, groups=groups)
+print('Best hyperparameters', search.best_params_)
+print('Cross-validation RMSLE', np.sqrt(-search.best_score_))
