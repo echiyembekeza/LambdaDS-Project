@@ -89,7 +89,7 @@ y_val_log = np.log1p(y_val)
 import category_encoders as ce
 from xgboost import XGBRegressor, XGBClassifier
 import warnings
-from sklearn.metrics import mean_squared_error, mean_squared_log_error
+from sklearn.metrics import mean_squared_error, mean_squared_log_error, accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.pipeline import make_pipeline
 
@@ -115,6 +115,9 @@ model.fit(X_train_encoded, y_train, eval_set=eval_set, eval_metric='rmse', early
 y_pred = model.predict(X_val_encoded)
 print('Validation Error', rmse(y_val, y_pred))
 
+predictions = [round(value) for value in y_pred]
+accuracy = accuracy_score(y_val, predictions)
+print("Accuracy: %.2f%%" % (accuracy * 100.0))
 
 from xgboost import XGBClassifier
 from xgboost import plot_tree
@@ -130,6 +133,7 @@ train_rmse = results['validation_0']['rmse']
 val_rmse = results['validation_1']['rmse']
 epoch = range(len(train_rmse))
 plt.plot(epoch, train_rmse, val_rmse, label='Validation')
+plt.figure().savefig('validation.png')
 #plt.plot(epoch, val_rmse, label='Validation')
 plt.ylim(0.15,0.35)
 plt.legend();
@@ -143,3 +147,26 @@ xgb.plot_importance(model,importance_type="weight")
 
 xgb.plot_importance(model,importance_type="cover")
 xgb.plot_importance(model,importance_type="gain")
+#y_pred = selection_model.predict(select_X_test)
+
+
+
+results = model.evals_result()
+epochs = len(results['validation_0']['error'])
+x_axis = range(0, epochs)
+# plot log loss
+fig, ax = pyplot.subplots()
+ax.plot(x_axis, results['validation_0']['logloss'], label='Train')
+ax.plot(x_axis, results['validation_1']['logloss'], label='Test')
+ax.legend()
+pyplot.ylabel('Log Loss')
+pyplot.title('XGBoost Log Loss')
+pyplot.show()
+# plot classification error
+fig, ax = pyplot.subplots()
+ax.plot(x_axis, results['validation_0']['error'], label='Train')
+ax.plot(x_axis, results['validation_1']['error'], label='Test')
+ax.legend()
+pyplot.ylabel('Classification Error')
+pyplot.title('XGBoost Classification Error')
+pyplot.show()
