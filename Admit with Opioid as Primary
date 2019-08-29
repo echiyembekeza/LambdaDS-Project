@@ -80,64 +80,65 @@ X_val = val.drop(columns=target)
 X_test = test.drop(columns=target)
 y_train = train[target]
 y_val = val[target]
+y_test = test[target]
+
 y_train_log = np.log1p(y_train)
 y_val_log = np.log1p(y_val)
 
 
 import category_encoders as ce
-from xgboost import XGBRegressor
+from xgboost import XGBRegressor, XGBClassifier
 import warnings
+from sklearn.metrics import mean_squared_error, mean_squared_log_error
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.pipeline import make_pipeline
+
+def rmse(y_true, y_pred):
+    return np.sqrt(mean_squared_error(y_true, y_pred))
+
+def rmsle(y_true, y_pred):
+    return np.sqrt(mean_squared_log_error(y_true,y_pred))
 warnings.simplefilter(action='ignore', category=FutureWarning)
+
 pipeline = make_pipeline(
     ce.OrdinalEncoder(),
     XGBRegressor(n_estimators=100, random_state=42, n_jobs=-1))
 
 encoder = ce.OrdinalEncoder()
-X_train_encoded = encoder.fit_transform(X_train)
+X_train_encoded = encoder.fit_transform(X_train, y_train)
 X_val_encoded = encoder.transform(X_val)
-eval_set = [(X_train_encoded, y_train),
-            (X_val_encoded, y_val)]
-model = XGBRegressor(n_estimators=100, n_jobs=-1)
+eval_set = [(X_train_encoded, y_train),(X_val_encoded, y_val)]
+#eval_set = [(X_test, y_test)]
+#model = XGBRegressor(n_estimators=100, n_jobs=-1)
+model = XGBClassifier(n_estimators=100, n_jobs=-1)
 model.fit(X_train_encoded, y_train, eval_set=eval_set, eval_metric='rmse', early_stopping_rounds=8)
 y_pred = model.predict(X_val_encoded)
 print('Validation Error', rmse(y_val, y_pred))
 
 
-
-%matplotlib inline
+from xgboost import XGBClassifier
+from xgboost import plot_tree
 import matplotlib.pyplot as plt
+plt.figure(figsize=(10,10))
+plot_tree(model)
+plt.show()
+%matplotlib inline
+
 
 results = model.evals_result()
 train_rmse = results['validation_0']['rmse']
 val_rmse = results['validation_1']['rmse']
 epoch = range(len(train_rmse))
-plt.plot(epoch, train_rmse, label='Train')
-plt.plot(epoch, val_rmse, label='Validation')
+plt.plot(epoch, train_rmse, val_rmse, label='Validation')
+#plt.plot(epoch, val_rmse, label='Validation')
 plt.ylim(0.15,0.35)
 plt.legend();
 
-
-
-
-
-
-from scipy.stats import randint, uniform
-from sklearn.model_selection import RandomizedSearchCV
-
-param_distributions = {
-    'randomforestregressor__n_estimators': randint(50, 500),
-    'randomforestregressor__max_features': uniform(),
-    'randomforestregressor__min_samples_leaf': [1, 10, 100]}
-
-search = RandomizedSearchCV(
-    pipeline,
-    param_distributions = param_distributions,
-    n_iter = 100,
-    cv = 10,
-    scoring = 'neg_mean_squared_error',
-    return_train_score = True,
-    n_jobs = -1)
-
-search.fit(x_train, y_train_log, groups=groups)
-print('Best hyperparameters', search.best_params_)
-print('Cross-validation RMSLE', np.sqrt(-search.best_score_))
+import xgboost as xgb
+from xgboost import plot_importance
+%matplotlib inline
+import matplotlib.pyplot as plt
+plt.figure(figsize=(10,10))
+xgb.plot_importance(model,importance_type="weight")
+xgb.plot_importance(model,importance_type="cover")
+xgb.plot_importance(model,importance_type="gain")
