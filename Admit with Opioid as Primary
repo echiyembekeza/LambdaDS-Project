@@ -140,5 +140,6 @@ from xgboost import plot_importance
 import matplotlib.pyplot as plt
 plt.figure(figsize=(10,10))
 xgb.plot_importance(model,importance_type="weight")
+
 xgb.plot_importance(model,importance_type="cover")
 xgb.plot_importance(model,importance_type="gain")
